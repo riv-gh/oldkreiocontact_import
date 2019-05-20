@@ -1,0 +1,59 @@
+import codecs
+import quopri
+import os
+import shutil
+
+def ker_decode(text):
+    return quopri.decodestring(text).decode('utf-8')
+
+def ker_encode(text):
+    return quopri.encodestring(text.encode('utf-8')).decode('utf-8').replace(' ','_')
+
+def eml_subject(name, line_len=9):
+    name_len = len(name)
+    i=0
+    text = ''
+    while i < name_len:
+        text = text + '\t=?utf-8?Q?' + ker_encode(name[i:i+line_len]) + '?=\r\n'
+        i=i+line_len
+    return text[1:]
+
+def to_hex_name(num):
+    def_len = 8
+    h=(''+hex(num))[2:]
+    name = ''
+    for i in range(def_len-len(h)):
+        name = name + '0'
+    name = name + h;
+    return name
+
+def create_eml_contact(contact_name, contact_mail,savepath, uid_tail):
+    print('\r\n-------------------------------\r\n')
+    print(contact_name)
+    print(contact_mail)
+    print(savepath)
+    text = 'Subject: ' + eml_subject(contact_name) + '\r\n'+ 'Date: Thu, 16 May 2019 16:38:21 +0300\r\n' + 'Content-Type: text/vcard; charset="utf-8"\r\n' + 'Content-Transfer-Encoding: 8bit\r\n\r\n' + 'BEGIN:VCARD\r\n' + 'VERSION:3.0\r\n' + 'PRODID:-//kerio.com/Contacts//NONSGML v1.0//EN\r\n' + 'N:'+contact_name+';;;;\r\n' + 'FN:'+contact_name+'\r\n' + 'X-FILE-AS:'+contact_name+'\r\n' + 'CLASS:PUBLIC\r\n' + 'EMAIL;TYPE=PREF,HOME:'+contact_mail+'\r\n' + 'UID:xxxxxxxx-xxxx-xxxx-xxxx-xxxx'+ uid_tail +'\r\n' + 'END:VCARD\r\n'
+    print(text)
+    with codecs.open(savepath, "w", encoding='utf-8') as f:
+        f.write(text)
+
+def clear_folder(folder):
+    for the_file in os.listdir(folder):
+        file_path = os.path.join(folder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            print(e)
+
+filename = 'F:\\_python\\tests\\csv.txt'
+outputfolder = 'F:\\_python\\tests\\output\\'
+clear_folder(outputfolder)
+infile = codecs.open(filename, encoding='utf-8')
+lines = infile.read().split("\r\n")
+i = 520
+for line in lines:
+        [name, surname, fullname, email] = line.split("\t");
+        create_eml_contact(fullname,email,outputfolder+to_hex_name(i)+'.eml', to_hex_name(i))
+        i = i+1
+
